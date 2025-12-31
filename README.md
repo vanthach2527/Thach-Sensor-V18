@@ -37,7 +37,7 @@ The system goes beyond simple OUI (Vendor) lookups. It attempts to connect to sp
 
 ---
 
-## Installation
+## Installation<>
 
 ### Prerequisites
 * **OS:** Windows 10/11 (Recommended) or Linux/macOS.
