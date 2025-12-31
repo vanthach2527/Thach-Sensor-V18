@@ -20,26 +20,23 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from colorama import Fore, Back, Style, init
 
-# ================= CẤU HÌNH (CONFIGURATION) =================
-# LƯU Ý QUAN TRỌNG:
-# 1. Khi chạy trên máy tính của bạn: Điền Token thật vào thay cho chữ "YOUR_..."
-# 2. Khi up lên GitHub: Hãy để nguyên chữ "YOUR_..." để không bị lộ mật khẩu.
+# ================= CONFIGURATION =================
 CONFIG = {
     "TG_TOKEN": os.environ.get("TG_TOKEN", "YOUR_BOT_TOKEN_HERE"), 
     "CHAT_ID": os.environ.get("CHAT_ID", "YOUR_CHAT_ID_HERE"),
     
     "VENDOR_API": "https://api.macvendors.co/",
-    "SCAN_INTERVAL": 2,       # Giây (Tốc độ quét)
-    "WORKERS": 50,            # Số luồng xử lý song song
+    "SCAN_INTERVAL": 2,       # Seconds (Scanning speed)
+    "WORKERS": 50,            # Number of parallel processing threads
     
-    # Tên card mạng (Thay đổi tùy theo máy: 'Wi-Fi', 'Ethernet', v.v.)
+    # Network card name (Varies depending on the computer: 'Wi-Fi', 'Ethernet', etc.)
     "INTERFACE_NAME": "Wi-Fi", 
     
     "PERSIST_FILE": "detected_macs.json",
-    "ALERT_COOLDOWN": 1.5,    # Giây (Chống spam tin nhắn)
+    "ALERT_COOLDOWN": 1.5,    # Seconds (Anti-spam messaging)
 }
 
-# ================= KHỞI TẠO (INITIALIZATION) =================
+# ================= INITIALIZATION =================
 init(autoreset=True)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -47,7 +44,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 try:
     import telebot
     import scapy.all as scapy
-    # Cấu hình interface cho Scapy (nếu cần thiết)
+    # Configure the interface for Scapy (if necessary).
     # scapy.conf.iface = CONFIG["INTERFACE_NAME"] 
 except ImportError:
     sys.exit(f"{Fore.RED}❌ Missing libraries. Run: pip install -r requirements.txt{Style.RESET_ALL}")
@@ -76,7 +73,7 @@ class NetworkManager:
 class DeviceFingerprinter:
     def __init__(self, workers=20):
         self.vendor_cache = {}
-        # Các cổng đặc trưng để nhận diện loại thiết bị
+        # The ports are specific to identify the type of device.
         self.ports_map = {
             62078: " Apple Mobile",
             5353:  " Bonjour Protocol",
@@ -134,7 +131,7 @@ class DeviceFingerprinter:
         dev_type = "UNKNOWN NODE"
         icon = "?"
 
-        # Logic nhận diện thông minh (Smart Detection Logic)
+        
         try:
             if "Apple" in vendor:
                 dev_type = "APPLE DEVICE"; icon = ""
@@ -261,7 +258,7 @@ class ThachSensorV18_Ultimate:
         time.sleep(1)
 
     def process_device(self, ip, mac):
-        # Logic 1: Nếu chưa từng thấy trong phiên này -> In ra màn hình
+        # TH1: If not seen in this session -> Print to screen
         if mac not in self.session_macs:
             self.session_macs.add(mac)
             info = self.fingerprinter.analyze(ip, mac)
@@ -274,7 +271,7 @@ class ThachSensorV18_Ultimate:
             
             print(f"{Fore.CYAN}║ {c}{info['ip']:<15} {Fore.CYAN}║ {Fore.WHITE}{info['mac']} {Fore.CYAN}║ {Fore.YELLOW}{info['vendor'][:20]:<20} {Fore.CYAN}║ {c}{info['type']}")
             
-            # Logic 2: Nếu chưa từng thấy trong LỊCH SỬ -> Gửi cảnh báo Telegram
+            # TH2:If you haven't seen it in HISTORY before -> Send a Telegram alert
             if mac not in self.detected_macs:
                 self.detected_macs.add(mac)
                 self._persist_macs()
@@ -297,7 +294,7 @@ class ThachSensorV18_Ultimate:
                         # Scapy scanning
                         ans = scapy.srp(packet, timeout=2, verbose=0, iface=CONFIG.get("INTERFACE_NAME"))[0]
                         for _, r in ans:
-                            # Đẩy vào luồng xử lý riêng để không bị đơ
+                            # Push it into a separate processing thread to avoid freezing.
                             self.executor.submit(self.process_device, r.psrc, r.hwsrc)
                     except PermissionError:
                         print(f"{Fore.RED}[!] ERROR: Run as Administrator/Root required!")
