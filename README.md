@@ -1,50 +1,50 @@
-# 🛡️ Thach Sensor - Network Intelligence Unit
+# THACH SENSOR - NETWORK INTELLIGENCE UNIT
 
-> **Advanced ARP Reconnaissance & Device Fingerprinting System**
-> *Developed by Thach Sensor*
+> Advanced Passive ARP Reconnaissance & Device Fingerprinting System
+> Version: 18.5 Ultimate Edition
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)
-![Security](https://img.shields.io/badge/Security-ARP%20Recon-red?style=for-the-badge)
-![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.10%2B-00599C?style=flat-square&logo=python&logoColor=white)
+![Network](https://img.shields.io/badge/Network-Scapy-green?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-grey?style=flat-square)
 
-## 📜 Giới thiệu (Overview)
+## Project Overview
 
-**Thach Sensor V18.5** là hệ thống giám sát an ninh mạng cục bộ (LAN) chuyên sâu, được thiết kế theo tư duy **"Zero Trust"**. Hệ thống sử dụng kỹ thuật **Passive ARP Sniffing** kết hợp với phân tích đa luồng để phát hiện, định danh và cảnh báo xâm nhập theo thời gian thực.
+Thach Sensor V18.5 is a specialized Local Area Network (LAN) monitoring system developed in Python. It operates on a Zero Trust architecture, utilizing passive ARP (Address Resolution Protocol) sniffing to detect, identify, and log every device entering the network in real-time.
 
-Điểm đặc biệt của phiên bản này là khả năng **"Smart Persistence"** (Ghi nhớ thông minh) - giúp phân biệt giữa thiết bị quen thuộc và mối đe dọa mới, loại bỏ hoàn toàn việc spam cảnh báo giả.
-
-## 🚀 Điểm nổi bật về Kỹ thuật (Technical Highlights)
-
-Phiên bản V18.5 mang đến những cải tiến cốt lõi về thuật toán so với các phiên bản trước:
-
-### 1. Dual-Layer Logic (Cơ chế Kép)
-Code tách biệt hoàn toàn hai luồng xử lý:
-* **Session View (Console):** Hiển thị *toàn bộ* thiết bị đang online ngay lập tức để Administrator dễ dàng giám sát trạng thái mạng.
-* **Alert Logic (Telegram):** Chỉ gửi cảnh báo khi phát hiện thiết bị *chưa từng xuất hiện* trong cơ sở dữ liệu lịch sử (`detected_macs.json`).
-
-### 2. Smart Persistence Engine (Bộ nhớ thông minh)
-Hệ thống tự động duy trì một tệp JSON cục bộ làm "Brain" (Bộ não).
-* **Input:** Gói tin ARP từ mạng.
-* **Process:** So khớp MAC Address với dữ liệu cũ.
-* **Output:** Quyết định im lặng (nếu là máy cũ) hoặc Báo động đỏ (nếu là máy lạ).
-
-### 3. Multi-threaded Fingerprinting (Đa luồng)
-Sử dụng `ThreadPoolExecutor` với 30 workers hoạt động song song.
-* Thay vì quét tuần tự từng máy (gây chậm), hệ thống quét cổng dịch vụ (Port 80, 443, 554...) của 30 thiết bị cùng lúc.
-* Tốc độ nhận diện Vendor và Loại thiết bị (Camera/Apple/PC) nhanh gấp **5 lần** so với đơn luồng.
-
-### 4. Cyberpunk Interface (UI)
-Giao diện dòng lệnh (CLI) được thiết kế lại với phong cách Cyberpunk, hỗ trợ hiển thị Icon trực quan cho từng loại thiết bị ( Apple, 📷 Camera, ❖ Windows).
+Unlike standard network scanners that require active probing (which can be detected by firewalls), Thach Sensor listens passively to broadcast traffic, making it stealthy and efficient. It integrates a Telegram Bot API to deliver instant security alerts to the administrator's mobile device.
 
 ---
 
-## 🛠️ Hướng dẫn Cài đặt (Installation)
+## System Architecture & Logic
 
-### Yêu cầu hệ thống (Prerequisites)
-* Python 3.8 trở lên.
-* **Npcap** (Đối với Windows): Bắt buộc để bắt gói tin. Tải tại [npcap.com](https://npcap.com/) (Chọn chế độ *"WinPcap API-compatible Mode"*).
+This tool is a multi-threaded application designed for performance and reliability. Below is the breakdown of the core logic implemented in the source code:
 
-### Bước 1: Clone dự án
+### 1. Concurrent Execution (Multi-threading)
+The system utilizes `ThreadPoolExecutor` with 50 worker threads. Standard sequential scanning is often slow because waiting for a port scan on one device blocks the detection of others. By offloading analysis tasks to background workers, Thach Sensor ensures the main sniffing loop never freezes (Non-blocking I/O).
+
+### 2. Smart Persistence Engine
+Most scanners annoy users with alerts for known devices (phones, laptops) every time the script restarts. Thach Sensor solves this by maintaining a persistent state layer:
+* **Session State (RAM):** Tracks what is online in the current session.
+* **History State (Disk):** Tracks devices that have been detected in the past via a JSON database.
+* **Logic:** The system compares new connections against the history database. Alerts are only sent if the MAC address is completely new.
+
+### 3. Advanced Device Fingerprinting
+The system goes beyond simple OUI (Vendor) lookups. It attempts to connect to specific service ports to classify the device type accurately:
+* **Port 554:** Identifies Surveillance Cameras (RTSP).
+* **Port 62078/5353:** Identifies Apple/iOS Devices.
+* **Port 3389:** Identifies Windows Workstations (RDP).
+* **Port 80/443:** Identifies Web Servers or Gateways.
+
+---
+
+## Installation
+
+### Prerequisites
+* **OS:** Windows 10/11 (Recommended) or Linux/macOS.
+* **Python:** Version 3.8 or higher.
+* **Driver (Windows Only):** You must install Npcap to allow Python to capture packets. Note: Check "Install Npcap in WinPcap API-compatible Mode" during installation.
+
+### Step 1: Clone the Repository
 ```bash
-git clone [https://github.com/vanthach2527/Thach-Sensor-V18.git](https://github.com/USERNAME-CUA-BAN/Thach-Sensor-V18.git)
+git clone [https://github.com/vanthach2527/Thach-Sensor-V18.git](https://github.com/vanthach2527/Thach-Sensor-V18.git)
 cd Thach-Sensor-V18
